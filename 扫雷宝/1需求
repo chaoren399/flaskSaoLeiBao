@@ -1,0 +1,14 @@
+
+用python 写一个web 系统，输入股票名称或者代码，查询如下接口，
+
+app.run(debug=True, host='0.0.0.0', port=5010)
+
+接口如下：http://page3.tdx.com.cn:7615/site/pcwebcall_static/bxb/bxb.html?code=xxxxxx&color=0
+
+该接口需要模拟浏览器行为
+通过浏览器，把xxxxxx换成想要查询的股票代码即可，例如
+
+http://page3.tdx.com.cn:7615/site/pcwebcall_static/bxb/bxb.html?code=000001&color=0
+
+
+原样返回原始界面信息

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票扫雷宝查询系统</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .example {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+        }
+        .example h3 {
+            margin-top: 0;
+            color: #2e7d32;
+        }
+        .example ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .example li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>股票扫雷宝查询系统</h1>
+
+        <form id="stockForm" target="_blank">
+            <div class="form-group">
+                <label for="stock_code">请输入股票代码:</label>
+                <input type="text" id="stock_code" name="stock_code" placeholder="例如: 000001 或 600000" required>
+            </div>
+            <button type="submit">查询</button>
+        </form>
+
+        <div class="example">
+            <h3>使用说明:</h3>
+            <ul>
+                <li>输入6位股票代码，如: 000001（平安银行）</li>
+                <li>支持上海股票（600xxx, 601xxx等）和深圳股票（000xxx, 002xxx等）</li>
+                <li>点击查询按钮将在新窗口中直接打开扫雷宝页面</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('stockForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const stockCode = document.getElementById('stock_code').value;
+
+            // 直接在新窗口中打开原始URL  关键点
+            const url = `http://page3.tdx.com.cn:7615/site/pcwebcall_static/bxb/bxb.html?code=${stockCode}&color=0`;
+            window.open(url, '_blank');
+        });
+    </script>
+</body>
+</html>
