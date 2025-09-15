@@ -25,6 +25,7 @@
         }
         .form-group {
             margin-bottom: 20px;
+            position: relative;
         }
         label {
             display: block;
@@ -71,39 +72,317 @@
         .example li {
             margin-bottom: 5px;
         }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        #loading {
+            display: none;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        #result-container {
+            display: none;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        #result-header {
+            background-color: #f8f8f8;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+        }
+        #close-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #close-btn:hover {
+            background-color: #d32f2f;
+        }
+        #result-frame {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+        /* 历史记录下拉样式 */
+        .history-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+        .history-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .history-item:hover {
+            background-color: #f5f5f5;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .history-empty {
+            padding: 10px;
+            color: #999;
+            font-style: italic;
+        }
+        .clear-history {
+            display: block;
+            margin-top: 10px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .clear-history:hover {
+            background-color: #f57c00;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>股票扫雷宝查询系统</h1>
 
-        <form id="stockForm" target="_blank">
+        <form id="stockForm">
             <div class="form-group">
-                <label for="stock_code">请输入股票代码:</label>
-                <input type="text" id="stock_code" name="stock_code" placeholder="例如: 000001 或 600000" required>
+                <label for="stock_input">请输入股票代码或名称:</label>
+                <input type="text" id="stock_input" name="stock_input" placeholder="例如: 000001 或 平安银行" autocomplete="off" required>
+                <div id="history-dropdown" class="history-dropdown">
+                    <div id="history-list"></div>
+                    <button type="button" id="clear-history" class="clear-history">清除历史记录</button>
+                </div>
             </div>
             <button type="submit">查询</button>
+            <div id="loading">正在查询中，请稍候...</div>
         </form>
+
+        <div id="error" class="error"></div>
+
+        <div id="result-container">
+            <div id="result-header">
+                <div>股票扫雷宝查询结果</div>
+                <button id="close-btn">关闭结果</button>
+            </div>
+            <iframe id="result-frame"></iframe>
+        </div>
 
         <div class="example">
             <h3>使用说明:</h3>
             <ul>
-                <li>输入6位股票代码，如: 000001（平安银行）</li>
+                <li>支持输入6位股票代码，如: 000001（平安银行）</li>
+                <li>支持输入股票名称，如: 平安银行、万科A等</li>
                 <li>支持上海股票（600xxx, 601xxx等）和深圳股票（000xxx, 002xxx等）</li>
-                <li>点击查询按钮将在新窗口中直接打开扫雷宝页面</li>
+                <li>点击查询按钮将在页面中显示扫雷宝页面结果</li>
+                <li>输入框会显示最近查询的5条历史记录</li>
             </ul>
         </div>
     </div>
 
     <script>
+        // 历史记录管理
+        const HistoryManager = {
+            MAX_HISTORY: 5,
+
+            // 获取历史记录
+            getHistory: function() {
+                try {
+                    const history = localStorage.getItem('stockQueryHistory');
+                    return history ? JSON.parse(history) : [];
+                } catch (e) {
+                    console.error('读取历史记录失败:', e);
+                    return [];
+                }
+            },
+
+            // 保存历史记录
+            saveHistory: function(history) {
+                try {
+                    localStorage.setItem('stockQueryHistory', JSON.stringify(history));
+                } catch (e) {
+                    console.error('保存历史记录失败:', e);
+                }
+            },
+
+            // 添加到历史记录
+            addToHistory: function(query) {
+                if (!query) return;
+
+                let history = this.getHistory();
+
+                // 移除已存在的相同记录
+                history = history.filter(item => item !== query);
+
+                // 添加到开头
+                history.unshift(query);
+
+                // 保持最多5条记录
+                if (history.length > this.MAX_HISTORY) {
+                    history = history.slice(0, this.MAX_HISTORY);
+                }
+
+                this.saveHistory(history);
+            },
+
+            // 清除历史记录
+            clearHistory: function() {
+                this.saveHistory([]);
+            }
+        };
+
+        // DOM元素
+        const stockInput = document.getElementById('stock_input');
+        const historyDropdown = document.getElementById('history-dropdown');
+        const historyList = document.getElementById('history-list');
+        const clearHistoryBtn = document.getElementById('clear-history');
+
+        // 显示历史记录下拉框
+        function showHistoryDropdown() {
+            const history = HistoryManager.getHistory();
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="history-empty">暂无查询历史</div>';
+            } else {
+                historyList.innerHTML = '';
+                history.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.textContent = item;
+                    historyItem.addEventListener('click', function() {
+                        stockInput.value = item;
+                        hideHistoryDropdown();
+                        stockInput.focus();
+                    });
+                    historyList.appendChild(historyItem);
+                });
+            }
+
+            historyDropdown.style.display = 'block';
+        }
+
+        // 隐藏历史记录下拉框
+        function hideHistoryDropdown() {
+            historyDropdown.style.display = 'none';
+        }
+
+        // 输入框事件处理
+        stockInput.addEventListener('focus', function() {
+            showHistoryDropdown();
+        });
+
+        stockInput.addEventListener('input', function() {
+            showHistoryDropdown();
+        });
+
+        // 点击其他地方隐藏下拉框
+        document.addEventListener('click', function(e) {
+            if (!stockInput.contains(e.target) && !historyDropdown.contains(e.target)) {
+                hideHistoryDropdown();
+            }
+        });
+
+        // 清除历史记录
+        clearHistoryBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            HistoryManager.clearHistory();
+            showHistoryDropdown();
+        });
+
+        // 表单提交处理
         document.getElementById('stockForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const stockCode = document.getElementById('stock_code').value;
+            const stockInputValue = document.getElementById('stock_input').value.trim();
+            const errorDiv = document.getElementById('error');
+            const loadingDiv = document.getElementById('loading');
+            const resultContainer = document.getElementById('result-container');
+            const resultFrame = document.getElementById('result-frame');
 
-            // 直接在新窗口中打开原始URL  关键点
-            const url = `http://page3.tdx.com.cn:7615/site/pcwebcall_static/bxb/bxb.html?code=${stockCode}&color=0`;
-            window.open(url, '_blank');
+            // 验证输入
+            if (!stockInputValue) {
+                errorDiv.textContent = '请输入股票代码或名称';
+                return;
+            }
+
+            // 添加到历史记录
+            HistoryManager.addToHistory(stockInputValue);
+
+            // 清空之前的错误信息
+            errorDiv.textContent = '';
+
+            // 隐藏结果容器
+            resultContainer.style.display = 'none';
+
+            // 显示加载提示
+            loadingDiv.style.display = 'block';
+
+            // 发送POST请求到后端进行处理
+            fetch('/query_stock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'stock_input=' + encodeURIComponent(stockInputValue)
+            })
+            .then(response => {
+                // 隐藏加载提示
+                loadingDiv.style.display = 'none';
+
+                if (!response.ok) {
+                    throw new Error('网络响应错误: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    errorDiv.textContent = data.error;
+                } else if (data.url) {
+                    // 在iframe中显示结果
+                    resultFrame.src = data.url;
+                    resultContainer.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                // 隐藏加载提示
+                loadingDiv.style.display = 'none';
+                console.error('请求失败:', error);
+                errorDiv.textContent = '请求失败: ' + error.message;
+            });
+        });
+
+        // 关闭结果按钮事件
+        document.getElementById('close-btn').addEventListener('click', function() {
+            const resultContainer = document.getElementById('result-container');
+            const resultFrame = document.getElementById('result-frame');
+
+            // 隐藏结果容器并清空iframe
+            resultContainer.style.display = 'none';
+            resultFrame.src = '';
+        });
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 隐藏下拉框
+            hideHistoryDropdown();
         });
     </script>
 </body>

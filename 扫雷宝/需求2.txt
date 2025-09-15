@@ -17,3 +17,6 @@ http://page3.tdx.com.cn:7615/site/pcwebcall_static/bxb/bxb.html?code=000001&colo
 查询的时候可以输入股票名字，然后后台自动转化为股票代码进行查询
 
 生成单独股票代码映射表保存在stockcode.txt 文件中
+
+
+按照stockcode.txt 文本格式，列出 A股所有股票的对应代码
