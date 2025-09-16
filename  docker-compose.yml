@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  stock-app:
+    build: .
+    ports:
+      - "5010:5010"
+    environment:
+      - FLASK_ENV=development
+      - TUSHARE_TOKEN=${TUSHARE_TOKEN}
+    volumes:
+      - ./stockcode.txt:/app/stockcode.txt
+      - ./templates:/app/templates
+      - ./static:/app/static
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - stock-network
+
+networks:
+  stock-network:
+    driver: bridge

@@ -1,5 +1,31 @@
 
 
+docker compose 启动：
+
+
+构建和启动服务：
+
+# 方法1：使用 docker-compose
+docker-compose up --build -d
+
+
+# 方法2：使用启动脚本
+chmod +x start.sh
+./start.sh
+
+docker-compose logs -f
+
+
+停止服务：
+# 方法1：使用 docker-compose
+docker-compose down
+
+# 方法2：使用停止脚本
+chmod +x stop.sh
+./stop.sh
+
+--------------------------
+
 http://saoleibao.a.baimeidashu.com/
 
 
