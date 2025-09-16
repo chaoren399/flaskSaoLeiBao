@@ -17,3 +17,32 @@ pip install -r requirements.txt
 python app.py
 
 访问系统： 打开浏览器访问 http://localhost:5000
+
+
+5 获取5000多只股票列表， getstocklist
+
+-----------------------------需求------------------
+
+
+模拟真实的浏览器去查询
+
+接口如下：http://page3.tdx.com.cn:7615/site/pcwebcall_static/bxb/bxb.html?code=xxxxxx&color=0
+
+
+通过浏览器，把xxxxxx换成想要查询的股票代码即可，例如
+
+http://page3.tdx.com.cn:7615/site/pcwebcall_static/bxb/bxb.html?code=000001&color=0
+
+
+原样返回原始界面信息
+
+
+直接在新窗口中打开原始URL
+
+查询的时候可以输入股票名字，然后后台自动转化为股票代码进行查询
+
+生成单独股票代码映射表保存在stockcode.txt 文件中
+
+
+按照stockcode.txt 文本格式，列出 A股所有股票的对应代码
+
