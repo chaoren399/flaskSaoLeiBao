@@ -3,6 +3,9 @@
 http://saoleibao.a.baimeidashu.com/
 
 ----------------------------------------
+
+git clone https://github.com/chaoren399/flaskSaoLeiBao.git
+
 docker compose 启动：
 
 
