@@ -112,40 +112,44 @@
             height: 600px;
             border: none;
         }
-        /* 历史记录下拉样式 */
-        .history-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            border-radius: 0 0 4px 4px;
-            z-index: 1000;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
+        /* 历史记录标签样式 */
+        .history-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
         }
-        .history-item {
-            padding: 10px;
+        .history-tag {
+            display: inline-flex;
+            align-items: center;
+            background-color: #e9f7ef;
+            border: 1px solid #4CAF50;
+            border-radius: 16px;
+            padding: 4px 8px;
+            font-size: 14px;
+        }
+        .tag-text {
             cursor: pointer;
-            border-bottom: 1px solid #eee;
+            padding: 2px 6px;
         }
-        .history-item:hover {
-            background-color: #f5f5f5;
+        .tag-remove {
+            background: none;
+            border: none;
+            color: #f44336;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 0 4px;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .history-item:last-child {
-            border-bottom: none;
-        }
-        .history-empty {
-            padding: 10px;
-            color: #999;
-            font-style: italic;
+        .tag-remove:hover {
+            background-color: #ffebee;
         }
         .clear-history {
-            display: block;
-            margin-top: 10px;
             background-color: #ff9800;
             color: white;
             border: none;
@@ -153,9 +157,13 @@
             border-radius: 3px;
             cursor: pointer;
             font-size: 12px;
+            margin-top: 10px;
         }
         .clear-history:hover {
             background-color: #f57c00;
+        }
+        .history-container {
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -167,10 +175,10 @@
             <div class="form-group">
                 <label for="stock_input">请输入股票代码或名称:</label>
                 <input type="text" id="stock_input" name="stock_input" placeholder="例如: 000001 或 平安银行" autocomplete="off" required>
-                <div id="history-dropdown" class="history-dropdown">
-                    <div id="history-list"></div>
-                    <button type="button" id="clear-history" class="clear-history">清除历史记录</button>
-                </div>
+            </div>
+            <div class="history-container">
+                <div id="history-tags" class="history-tags"></div>
+                <button type="button" id="clear-history" class="clear-history">清除历史记录</button>
             </div>
             <button type="submit">查询</button>
             <div id="loading">正在查询中，请稍候...</div>
@@ -193,7 +201,7 @@
                 <li>支持输入股票名称，如: 平安银行、万科A等</li>
                 <li>支持上海股票（600xxx, 601xxx等）和深圳股票（000xxx, 002xxx等）</li>
                 <li>点击查询按钮将在页面中显示扫雷宝页面结果</li>
-                <li>输入框会显示最近查询的5条历史记录</li>
+                <li>输入框下方会显示最近查询的历史记录标签</li>
             </ul>
         </div>
     </div>
@@ -241,71 +249,63 @@
                 }
 
                 this.saveHistory(history);
+                renderHistoryTags(); // 更新历史记录显示
+            },
+
+            // 从历史记录中删除一项
+            removeFromHistory: function(query) {
+                let history = this.getHistory();
+                history = history.filter(item => item !== query);
+                this.saveHistory(history);
+                renderHistoryTags(); // 更新历史记录显示
             },
 
             // 清除历史记录
             clearHistory: function() {
                 this.saveHistory([]);
+                renderHistoryTags(); // 更新历史记录显示
             }
         };
 
         // DOM元素
         const stockInput = document.getElementById('stock_input');
-        const historyDropdown = document.getElementById('history-dropdown');
-        const historyList = document.getElementById('history-list');
+        const historyTagsContainer = document.getElementById('history-tags');
         const clearHistoryBtn = document.getElementById('clear-history');
 
-        // 显示历史记录下拉框
-        function showHistoryDropdown() {
+        // 渲染历史记录标签
+        function renderHistoryTags() {
             const history = HistoryManager.getHistory();
+            historyTagsContainer.innerHTML = '';
 
             if (history.length === 0) {
-                historyList.innerHTML = '<div class="history-empty">暂无查询历史</div>';
-            } else {
-                historyList.innerHTML = '';
-                history.forEach(item => {
-                    const historyItem = document.createElement('div');
-                    historyItem.className = 'history-item';
-                    historyItem.textContent = item;
-                    historyItem.addEventListener('click', function() {
-                        stockInput.value = item;
-                        hideHistoryDropdown();
-                        stockInput.focus();
-                    });
-                    historyList.appendChild(historyItem);
+                return;
+            }
+
+            history.forEach(item => {
+                const tag = document.createElement('div');
+                tag.className = 'history-tag';
+
+                const tagText = document.createElement('span');
+                tagText.className = 'tag-text';
+                tagText.textContent = item;
+                tagText.addEventListener('click', function() {
+                    stockInput.value = item;
+                    stockInput.focus();
                 });
-            }
 
-            historyDropdown.style.display = 'block';
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'tag-remove';
+                removeBtn.textContent = '×';
+                removeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    HistoryManager.removeFromHistory(item);
+                });
+
+                tag.appendChild(tagText);
+                tag.appendChild(removeBtn);
+                historyTagsContainer.appendChild(tag);
+            });
         }
-
-        // 隐藏历史记录下拉框
-        function hideHistoryDropdown() {
-            historyDropdown.style.display = 'none';
-        }
-
-        // 输入框事件处理
-        stockInput.addEventListener('focus', function() {
-            showHistoryDropdown();
-        });
-
-        stockInput.addEventListener('input', function() {
-            showHistoryDropdown();
-        });
-
-        // 点击其他地方隐藏下拉框
-        document.addEventListener('click', function(e) {
-            if (!stockInput.contains(e.target) && !historyDropdown.contains(e.target)) {
-                hideHistoryDropdown();
-            }
-        });
-
-        // 清除历史记录
-        clearHistoryBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            HistoryManager.clearHistory();
-            showHistoryDropdown();
-        });
 
         // 表单提交处理
         document.getElementById('stockForm').addEventListener('submit', function(e) {
@@ -369,6 +369,11 @@
             });
         });
 
+        // 清除历史记录
+        clearHistoryBtn.addEventListener('click', function() {
+            HistoryManager.clearHistory();
+        });
+
         // 关闭结果按钮事件
         document.getElementById('close-btn').addEventListener('click', function() {
             const resultContainer = document.getElementById('result-container');
@@ -381,8 +386,7 @@
 
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 隐藏下拉框
-            hideHistoryDropdown();
+            renderHistoryTags();
         });
     </script>
 </body>
